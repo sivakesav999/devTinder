@@ -1,0 +1,22 @@
+{
+  "name": "devtinder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sivakesav999/devTinder.git"
+  },
+  "author": "siva",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sivakesav999/devTinder/issues"
+  },
+  "homepage": "https://github.com/sivakesav999/devTinder#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
