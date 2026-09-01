@@ -5,13 +5,42 @@ const connectDB = require("./config/database.js");
 const app = express();
 const User = require("./models/user");
 app.use(express.json());
+const validate = require("validator");
+const { validateSignUpData } = require("./utils/validate");
+const bcrypt = require("bcrypt");
+
 app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
   try {
+    validateSignUpData(req); // Validate the request data
+    const { firstName, lastName, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+    });
     await user.save();
     res.send("User added!!!");
   } catch (err) {
-    res.status(500).send("Error adding the user " + err.message);
+    res.status(500).send("Error : " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!validate.isEmail(email))
+      throw new Error("Please Enter a valid email");
+    const user = await User.findOne({ email });
+    if (!user)
+      throw new Error("Invalid Credentials");
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch)
+      throw new Error("Invalid Credentials");
+    res.send("Login SuccessfulL!");
+  } catch (err) {
+    throw new Error("Error : " + err.message);
   }
 });
 
@@ -44,7 +73,7 @@ app.delete("/user/:userId", async (req, res) => {
     const user = await User.findByIdAndDelete(userId);
     res.send("User Deleted Successfully!");
   } catch (err) {
-    res.send("User not found!");
+    res.status(404).send("User not found!");
   }
 });
 
@@ -52,15 +81,9 @@ app.patch("/user/:userId", async (req, res) => {
   const data = req.body;
   const userId = req.params?.userId;
   try {
-    const allowedUpdates = [
-      "firstName",
-      "lastName",
-      "age",
-      "gender",
-      "skills",
-    ];
+    const allowedUpdates = ["firstName", "lastName", "age", "gender", "skills"];
     const isAllowedUpdates = Object.keys(data).every((key) =>
-      allowedUpdates.includes(key)
+      allowedUpdates.includes(key),
     );
     if (!isAllowedUpdates) {
       throw new Error("Updates not allowed!");
