@@ -37,6 +37,27 @@ app.get("/user/getAllUsers", async (req, res) => {
   }
 });
 
+app.delete("/user/deleteById", async (req, res) => {
+  const id = req.body._id;
+  try{
+    const userId = await User.findByIdAndDelete(id);
+    res.send("User Deleted Successfully!");
+  } catch(err){
+    res.send("User not found!");
+  }
+});
+
+app.patch("/user/updateById", async(req, res)=>{
+  const data = req.body;
+  const userId = req.body._id;
+  try{
+    await User.findByIdAndUpdate({_id: userId}, data, { runValidators: true });
+    res.send("Data Updated Successfully!");
+  }catch(err){
+    res.send("Something went wrong : ", err);
+  }
+})
+
 connectDB()
   .then(() => {
     app.listen(3000, () => {
