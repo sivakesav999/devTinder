@@ -15,10 +15,11 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.get("/user", async (req, res) => {
+app.get("/user/:userId", async (req, res) => {
+  const userId = req.params?.userId;
   try {
-    const user = await User.findOne({ email: "rohit@gmail.com" });
-    if (user.length === 0) {
+    const user = await User.findById(userId);
+    if (!user) {
       res.status(404).send("User not found");
     } else {
       res.send({ user });
@@ -28,7 +29,7 @@ app.get("/user", async (req, res) => {
   }
 });
 
-app.get("/user/getAllUsers", async (req, res) => {
+app.get("/user/all", async (req, res) => {
   try {
     const users = await User.find({});
     res.send({ users });
@@ -37,26 +38,43 @@ app.get("/user/getAllUsers", async (req, res) => {
   }
 });
 
-app.delete("/user/deleteById", async (req, res) => {
-  const id = req.body._id;
-  try{
-    const userId = await User.findByIdAndDelete(id);
+app.delete("/user/:userId", async (req, res) => {
+  const userId = req.params?.userId;
+  try {
+    const user = await User.findByIdAndDelete(userId);
     res.send("User Deleted Successfully!");
-  } catch(err){
+  } catch (err) {
     res.send("User not found!");
   }
 });
 
-app.patch("/user/updateById", async(req, res)=>{
+app.patch("/user/:userId", async (req, res) => {
   const data = req.body;
-  const userId = req.body._id;
-  try{
-    await User.findByIdAndUpdate({_id: userId}, data, { runValidators: true });
+  const userId = req.params?.userId;
+  try {
+    const allowedUpdates = [
+      "firstName",
+      "lastName",
+      "age",
+      "gender",
+      "skills",
+    ];
+    const isAllowedUpdates = Object.keys(data).every((key) =>
+      allowedUpdates.includes(key)
+    );
+    if (!isAllowedUpdates) {
+      throw new Error("Updates not allowed!");
+    }
+    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
+      runValidators: true,
+      returnDocument: "after",
+    });
+    console.log(user);
     res.send("Data Updated Successfully!");
-  }catch(err){
-    res.send("Something went wrong : ", err);
+  } catch (err) {
+    res.status(400).send("Something went wrong : " + err.message);
   }
-})
+});
 
 connectDB()
   .then(() => {
