@@ -5,59 +5,15 @@ const connectDB = require("./config/database.js");
 const app = express();
 const User = require("./models/user");
 app.use(express.json());
-const validate = require("validator");
-const { validateSignUpData } = require("./utils/validate");
-const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
-const jwt = require("jsonwebtoken");
-const { userAuth } = require("./middlewares/auth.js");
+const authRouter = require("./routes/auth.js");
+const profileRouter = require("./routes/profile.js");
+const requestRouter = require("./routes/request.js");
 
-app.post("/signup", async (req, res) => {
-  try {
-    validateSignUpData(req); // Validate the request data
-    const { firstName, lastName, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    const user = new User({
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-    });
-    await user.save();
-    res.send("User added!!!");
-  } catch (err) {
-    res.status(500).send("Error : " + err.message);
-  }
-});
-
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    if (!validate.isEmail(email)) throw new Error("Please Enter a valid email");
-    const user = await User.findOne({ email });
-    if (!user) throw new Error("Invalid Credentials");
-    const isPasswordMatch = await user.validatePassword(password);
-    if (!isPasswordMatch) {
-      throw new Error("Invalid Credentials");
-    } else {
-      const token = await user.getJwtToken();
-      res.cookie("token", token, {expiresIn : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), httpOnly: true});
-      res.send("Login Successfull!");
-    }
-  } catch (err) {
-    throw new Error("Error : " + err.message);
-  }
-});
-
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user;
-    res.send(user);
-  } catch (error) {
-    res.status(400).send("Error : " + error.message);
-  }
-});
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
 
 app.get("/user/:userId", async (req, res) => {
   const userId = req.params?.userId;
