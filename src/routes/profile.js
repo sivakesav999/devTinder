@@ -28,4 +28,19 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
         return res.status(400).send("Error : " + error.message);
     }
 })
+
+profileRouter.patch("/profile/password", userAuth, async (req, res) => {
+    try {
+        const {oldPassword, newPassword} = req.body;
+        if(!oldPassword || !newPassword) throw new Error("Old Password and New Password are required");
+        const loggedInUser = req.user;
+        const isPasswordMatch = await loggedInUser.validatePassword(oldPassword);
+        if(!isPasswordMatch) throw new Error("Old Password is incorrect");
+        loggedInUser.password = newPassword;
+        await loggedInUser.save();
+        res.json({Message: "Password Updated Successfully", Data: loggedInUser});
+    } catch (error) {
+        return res.status(400).send("Error : " + error.message);
+    }
+});
 module.exports = profileRouter;
