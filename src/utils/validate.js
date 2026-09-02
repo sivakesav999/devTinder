@@ -7,4 +7,12 @@ const validateSignUpData = (req) => {
     else if(!validate.isStrongPassword(password)) throw new Error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one symbol");
 }
 
-module.exports = {validateSignUpData};
+const validateEditProfileData = (req) => {
+    const allowedUpdates = ["firstName", "lastName", "age", "gender", "skills", "about", "photoUrl"];
+    const isEditAllowed = Object.keys(req.body).every((key) => {
+        return allowedUpdates.includes(key);
+    });
+    return isEditAllowed;
+}
+
+module.exports = {validateSignUpData, validateEditProfileData};
