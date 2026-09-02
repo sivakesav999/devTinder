@@ -37,11 +37,11 @@ app.post("/login", async (req, res) => {
     if (!validate.isEmail(email)) throw new Error("Please Enter a valid email");
     const user = await User.findOne({ email });
     if (!user) throw new Error("Invalid Credentials");
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    const isPasswordMatch = await user.validatePassword(password);
     if (!isPasswordMatch) {
       throw new Error("Invalid Credentials");
     } else {
-      const token = await jwt.sign({ userId: user._id }, "siva", {expiresIn : "7d"});
+      const token = await user.getJwtToken();
       res.cookie("token", token, {expiresIn : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), httpOnly: true});
       res.send("Login Successfull!");
     }
