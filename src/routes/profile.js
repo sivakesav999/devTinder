@@ -1,5 +1,5 @@
 const express = require("express");
-const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const profileRouter = express.Router();
 const { userAuth } = require("../middlewares/auth.js");
@@ -36,7 +36,8 @@ profileRouter.patch("/profile/password", userAuth, async (req, res) => {
         const loggedInUser = req.user;
         const isPasswordMatch = await loggedInUser.validatePassword(oldPassword);
         if(!isPasswordMatch) throw new Error("Old Password is incorrect");
-        loggedInUser.password = newPassword;
+        const hashedPassword = await bcrypt.hash(newPassword, 10); // Hash the password
+        loggedInUser.password = hashedPassword;
         await loggedInUser.save();
         res.json({Message: "Password Updated Successfully", Data: loggedInUser});
     } catch (error) {
