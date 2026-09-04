@@ -12,3 +12,12 @@
 
 ## ConnectionRequestRouter
 - POST /request/send/:status/:toUserId
+- POST /request/review/:status/:requestId
+
+## UserRouter
+- GET /user/connections
+- GET /user/requests/received
+- GET /user/feed  - Shows you the profiles of other users on platform
+
+
+Status - Ignored, Interested, Accepted & Rejected.
