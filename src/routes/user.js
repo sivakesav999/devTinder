@@ -2,6 +2,15 @@ const express = require("express");
 const { userAuth } = require("../middlewares/auth.js");
 const userRouter = express.Router();
 const ConnectionRequestModel = require("../models/connectionRequests.js");
+const User = require("../models/user");
+const usersDataFields = [
+  "firstName",
+  "lastName",
+  "email",
+  "skills",
+  "about",
+  "photo",
+];
 
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
   try {
@@ -34,7 +43,7 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
     const connectionsData = connections.map((connection) => {
       if (connection.fromUserId._id.equals(loggedInUser._id)) {
         return connection.toUserId;
-    }
+      }
 
       return connection.fromUserId;
     });
@@ -45,6 +54,34 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
     });
   } catch (error) {
     res.status(404).send("ERROR : " + error.message);
+  }
+});
+
+userRouter.get("/user/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+
+    const connectionRequests = await ConnectionRequestModel.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    }).select("fromUserId toUserId");
+
+    const hideUsersFromFeed = new Set(); //to have the uniqueID's
+
+    connectionRequests.forEach((request) => {
+      hideUsersFromFeed.add(request.fromUserId.toString());
+      hideUsersFromFeed.add(request.toUserId.toString());
+    });
+
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUsersFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    }).select(usersDataFields);
+
+    res.send(users);
+  } catch (error) {
+    res.status(404).send("No Feed For You!");
   }
 });
 
