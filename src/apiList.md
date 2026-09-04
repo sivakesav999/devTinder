@@ -18,6 +18,6 @@
 - GET /user/connections
 - GET /user/requests/received
 - GET /user/feed  - Shows you the profiles of other users on platform
-
+- Pagination - .skip().limit() - Feed API
 
 Status - Ignored, Interested, Accepted & Rejected.
