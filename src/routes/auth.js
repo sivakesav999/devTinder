@@ -41,7 +41,7 @@ authRouter.post("/login", async (req, res) => {
       res.send(user);
     }
   } catch (err) {
-    throw new Error("Error : " + err.message);
+    res.status(400).send(err.message);
   }
 });
 
