@@ -10,15 +10,17 @@ const usersDataFields = [
   "skills",
   "about",
   "photo",
+  "age",
+  "gender"
 ];
 
-userRouter.get("/user/requests/received", userAuth, async (req, res) => {
+userRouter.get("/requests/received", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
     const connectionRequests = await ConnectionRequestModel.find({
       toUserId: loggedInUser._id,
       status: "interested",
-    }).populate("fromUserId", "firstName lastName photoUrl age gender skills");
+    }).populate("fromUserId", "firstName lastName photo age gender skills about");
     res.json({
       message: "Data fetched successfully!",
       data: connectionRequests,
@@ -28,7 +30,7 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
   }
 });
 
-userRouter.get("/user/connections", userAuth, async (req, res) => {
+userRouter.get("/connections", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
     const connections = await ConnectionRequestModel.find({
@@ -37,8 +39,8 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         { fromUserId: loggedInUser._id, status: "accepted" },
       ],
     })
-      .populate("fromUserId", "firstName lastName photoUrl age gender skills")
-      .populate("toUserId", "firstName lastName photoUrl age gender skills");
+      .populate("fromUserId", "firstName lastName photo age gender skills about")
+      .populate("toUserId", "firstName lastName photo age gender skills about");
 
     const connectionsData = connections.map((connection) => {
       if (connection.fromUserId._id.equals(loggedInUser._id)) {
