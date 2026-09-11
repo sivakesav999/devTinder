@@ -3,6 +3,7 @@ const { userAuth } = require("../middlewares/auth.js");
 const requestRouter = express.Router();
 const User = require("../models/user.js");
 const ConnectionRequestModel = require("../models/connectionRequests.js");
+const sendEmail = require("../utils/sendEmail");
 
 requestRouter.post(
   "/request/send/:status/:toUserId",
@@ -15,7 +16,7 @@ requestRouter.post(
 
       const allowedStatus = ["ignore", "interested"]; //Strict Status Verification.
       if (!allowedStatus.includes(status))
-        return res.json({ message: "Invalid Status : " + status });
+        return res.status(400).json({ message: "Invalid Status : " + status });
 
       const existingUser = await User.findById(toUserId); //Strict User Verification.
       if (!existingUser)
@@ -31,7 +32,7 @@ requestRouter.post(
 
       if (existingConnectionRequest)
         return res
-          .status(400)
+          .status(409)
           .send({ message: "Connection Request Already Exists" });
 
       const connectionRequest = new ConnectionRequestModel({
@@ -40,11 +41,36 @@ requestRouter.post(
         status,
       });
       const savedRequest = await connectionRequest.save();
-      res
-        .status(200)
-        .json({ message: "Request sent successfully!", savedRequest });
+
+      try {
+        const emailRes = await sendEmail.run(
+          existingUser.email,
+          process.env.SES_FROM_EMAIL || "sivakesav999@gmail.com",
+          [req.user.firstName, req.user.lastName].filter(Boolean).join(" "),
+        );
+
+        console.log("Email sent successfully:", emailRes.MessageId);
+      } catch (emailError) {
+        console.error("Email sending failed:", {
+          name: emailError.name,
+          message: emailError.message,
+          code: emailError.Code,
+        });
+        return res.status(502).json({
+          message: "Connection request saved, but notification email failed",
+        });
+      }
+
+      res.status(200).json({
+        message: "Request sent successfully!",
+        savedRequest,
+      });
     } catch (error) {
-      res.status(400).json({ error: "ERROR: " + error.message });
+      if (error.name === "ValidationError" || error.name === "CastError")
+        return res.status(400).json({ error: error.message });
+
+      console.error("Failed to send connection request:", error);
+      return res.status(500).json({ error: "Failed to send connection request" });
     }
   },
 );

@@ -4,15 +4,20 @@ const User = require("../models/user");
 const userAuth = async (req, res, next) => {
   try {
     const { token } = req.cookies;
-    if(!token) res.status(401).send("Please Login!")
-    const decodedMessage = jwt.verify(token, "siva");
+    if (!token) return res.status(401).send("Please Login!");
+
+    const decodedMessage = jwt.verify(token, process.env.JWT_SECRET);
     const { userId } = decodedMessage;
     const user = await User.findById(userId);
-    if (!user) throw new Error("User not found!");
+    if (!user) return res.status(401).send("User not found!");
     req.user = user;
-    next();
+    return next();
   } catch (err) {
-    res.status(400).send("Error : " + err.message);
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError")
+      return res.status(401).send("Authentication failed");
+
+    console.error("Authentication lookup failed:", err);
+    return res.status(500).send("Authentication service unavailable");
   }
 };
 

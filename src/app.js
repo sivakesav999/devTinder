@@ -1,5 +1,6 @@
-// const dns = require("dns");
-// dns.setServers(["8.8.8.8", "8.8.4.4"]);
+require("dotenv").config();
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const express = require("express");
 const app = express();
@@ -31,7 +32,7 @@ app.use("/", userRouter);
 
 connectDB()
   .then(() => {
-    app.listen(3000, () => {
+    app.listen(process.env.PORT, () => {
       console.log("DB Connected & Server is running on port 3000");
     });
   })
