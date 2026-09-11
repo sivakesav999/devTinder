@@ -40,9 +40,13 @@ authRouter.post("/signup", async (req, res) => {
 });
 
 authRouter.post("/login", async (req, res) => {
-  const { email, password } = req.body;
   try {
-    if (!validate.isEmail(email)) throw new Error("Please Enter a valid email");
+    const { email, password } = req.body || {};
+    if (typeof email !== "string" || !validate.isEmail(email))
+      return res.status(400).send("Please Enter a valid email");
+    if (typeof password !== "string" || password.length === 0)
+      return res.status(400).send("Password is required");
+
     const user = await User.findOne({ email });
     if (!user) throw new Error("Invalid Credentials");
     const isPasswordMatch = await user.validatePassword(password);
@@ -57,7 +61,11 @@ authRouter.post("/login", async (req, res) => {
       res.send(user);
     }
   } catch (err) {
-    res.status(400).send(err.message);
+    if (err.message === "Invalid Credentials")
+      return res.status(400).send(err.message);
+
+    console.error("Login failed:", err);
+    return res.status(500).send("Login service unavailable");
   }
 });
 
