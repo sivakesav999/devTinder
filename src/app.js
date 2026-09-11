@@ -1,4 +1,16 @@
 require("dotenv").config();
+
+const requiredEnvironmentVariables = ["JWT_SECRET", "DB_CONNECTION_SECRET"];
+const missingEnvironmentVariables = requiredEnvironmentVariables.filter(
+  (name) => !process.env[name],
+);
+
+if (missingEnvironmentVariables.length > 0) {
+  throw new Error(
+    `Missing required environment variables: ${missingEnvironmentVariables.join(", ")}`,
+  );
+}
+
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
