@@ -8,6 +8,12 @@ const authRouter = express.Router();
 authRouter.use(cookieParser());
 authRouter.use(express.json());
 
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: process.env.COOKIE_SAME_SITE || "lax",
+  secure: process.env.COOKIE_SECURE === "true",
+};
+
 authRouter.post("/signup", async (req, res) => {
   try {
     validateSignUpData(req); // Validate the request data
@@ -24,7 +30,8 @@ authRouter.post("/signup", async (req, res) => {
     const token = await savedUser.getJwtToken();
 
     res.cookie("token", token, {
-      expires : new Date(Date.now() + 8 * 3600000),
+      ...authCookieOptions,
+      expires: new Date(Date.now() + 8 * 3600000),
     });
     res.send(savedUser);
   } catch (err) {
@@ -43,7 +50,10 @@ authRouter.post("/login", async (req, res) => {
       throw new Error("Invalid Credentials");
     } else {
       const token = await user.getJwtToken();
-      res.cookie("token", token, {expiresIn : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), httpOnly: true});
+      res.cookie("token", token, {
+        ...authCookieOptions,
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
       res.send(user);
     }
   } catch (err) {
@@ -52,7 +62,10 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/logout", async (req, res) => {
-    res.cookie("token", "", { expires: new Date(Date.now()) });
+    res.cookie("token", "", {
+      ...authCookieOptions,
+      expires: new Date(0),
+    });
     res.send("Logout Successfull!");
 });
 
