@@ -1,25 +1,17 @@
 require("dotenv").config();
 
-const requiredEnvironmentVariables = ["JWT_SECRET", "DB_CONNECTION_SECRET"];
-const missingEnvironmentVariables = requiredEnvironmentVariables.filter(
-  (name) => !process.env[name],
-);
-
-if (missingEnvironmentVariables.length > 0) {
-  throw new Error(
-    `Missing required environment variables: ${missingEnvironmentVariables.join(", ")}`,
-  );
-}
-
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
+const http = require("http");
 const express = require("express");
 const app = express();
 app.use(express.json());
 
 const cors = require("cors");
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173,http://13.49.44.222")
+const allowedOrigins = (
+  process.env.FRONTEND_URL || "http://localhost:5173,http://13.49.44.222"
+)
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
@@ -27,7 +19,8 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173,http:
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin || allowedOrigins.includes(origin))
+        return callback(null, true);
       console.warn(`CORS request rejected from origin: ${origin}`);
       return callback(null, false);
     },
@@ -45,15 +38,19 @@ const authRouter = require("./routes/auth.js");
 const profileRouter = require("./routes/profile.js");
 const requestRouter = require("./routes/request.js");
 const userRouter = require("./routes/user.js");
+const initializeSocket = require("./utils/socket.js");
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
 
+const server = http.createServer(app);
+initializeSocket(server);
+
 connectDB()
   .then(() => {
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
       console.log("DB Connected & Server is running on port 3000");
     });
   })
